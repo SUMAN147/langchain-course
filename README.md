@@ -1,52 +1,78 @@
-# LangChain Search Agents Tutorial
+# RAG Tutorial with LangChain
 
-This branch (`project/search-agent`) demonstrates how to build search agents using LangChain's `create_agent` interface. The tutorial progresses through three key concepts, showing how to evolve from a basic custom tool implementation to using structured outputs with built-in LangChain integrations.
+A step-by-step tutorial demonstrating how to build a Retrieval Augmented Generation (RAG) system using LangChain, OpenAI, and Pinecone.
 
-## Learning Objectives
+## Overview
 
-- Understand the LangChain `create_agent` interface
-- Build custom tools using the `@tool` decorator
-- Integrate third-party search APIs (Tavily)
-- Use LangChain's built-in tool integrations
-- Implement structured outputs with Pydantic models
+This tutorial progressively builds a complete RAG pipeline:
+1. **Document Ingestion** - Load, chunk, embed, and store documents in a vector database
+2. **Naive RAG** - Implement a basic retrieval chain using manual function calls
+3. **LCEL RAG** - Refactor to use LangChain Expression Language for a cleaner, more powerful approach
 
-## Commits Overview
+## Tutorial Progression
 
-| # | Commit | Title | What You'll Learn | Key Changes |
-|---|--------|-------|-------------------|-------------|
-| 1 | [d2bd87f](https://github.com/emarco177/ice_breaker/commit/d2bd87f825f3558f6674fcde854767206bfcfe63) | intro to search agents | Project setup, creating custom search tools with `@tool` decorator, direct Tavily API integration, building an agent with `create_agent`, invoking agents with messages | Initial project setup with dependencies, created custom `search` function using `@tool`, direct `TavilyClient` integration, created agent using `create_agent(model=llm, tools=tools)`, invoked agent with `HumanMessage` |
-| 2 | [8f78259](https://github.com/emarco177/ice_breaker/commit/8f782592c4e6bd083a4973588b82514a87836975) | langchain tavily built in tool | Using LangChain's built-in tool integrations instead of custom tools, code simplification and best practices | Replaced custom `@tool` with `TavilySearch` from `langchain_tavily`, removed boilerplate code, cleaner implementation |
-| 3 | [ba398aa](https://github.com/emarco177/ice_breaker/commit/ba398aa03795ea3fbb341e2b599dce5aae59ebe4) | added structured output | Implementing structured outputs with Pydantic models, type-safe agent responses using `response_format` parameter | Added `Source` and `AgentResponse` BaseModels, configured `response_format` in `create_agent`, enforced predictable output structure |
+Follow the commits in order to learn RAG concepts incrementally:
 
-## Running the Code
+| Step | Commit | Description |
+|------|--------|-------------|
+| 1 | `598dee4` | **Initial Setup** - Project structure with dependencies (LangChain, OpenAI, Pinecone), sample data, and basic configuration |
+| 2 | `2e34caf` | **Add Imports** - Import LangChain components for document processing: TextLoader, CharacterTextSplitter, OpenAIEmbeddings, PineconeVectorStore |
+| 3 | `9066596` | **Document Ingestion Pipeline** - Complete ingestion: load text documents, split into chunks, generate embeddings, store in Pinecone |
+| 4 | `5b0c33f` | **Naive RAG Implementation** - Manual step-by-step retrieval chain demonstrating core RAG concepts without LCEL |
+| 5 | `5e4d009` | **LCEL-Based RAG** - Declarative retrieval chain using LangChain Expression Language with streaming, async, and composability |
+
+## Key Components
+
+### Ingestion (`ingestion.py`)
+- **TextLoader**: Load documents from text files
+- **CharacterTextSplitter**: Split documents into manageable chunks (1000 chars)
+- **OpenAIEmbeddings**: Convert text chunks to vector embeddings
+- **PineconeVectorStore**: Store and index vectors for similarity search
+
+### Retrieval (`main.py`)
+- **Raw LLM**: Direct query to LLM (no context) - baseline comparison
+- **Naive RAG**: Manual retrieval → format → prompt → LLM pipeline
+- **LCEL RAG**: Declarative chain using `|` operator with built-in streaming/async
+
+## Setup
 
 1. Install dependencies:
-   ```bash
-   uv sync
-   ```
-
-2. Set up environment variables:
-   ```bash
-   # Create a .env file with:
-   OPENAI_API_KEY=your_openai_key
-   TAVILY_API_KEY=your_tavily_key
-   ```
-
-3. Run the agent:
-   ```bash
-   python main.py
-   ```
-
-## Example Query
-
-The agent searches for AI engineer job postings in the Bay Area on LinkedIn:
-```python
-"search for 3 job postings for an ai engineer using langchain in the bay area on linkedin and list their details?"
+```bash
+uv sync
 ```
 
-## Key Takeaways
+2. Set environment variables:
+```bash
+OPENAI_API_KEY=your_openai_key
+PINECONE_API_KEY=your_pinecone_key
+INDEX_NAME=your_index_name
+```
 
-- **Custom Tools**: You can create custom tools using the `@tool` decorator for specialized functionality
-- **Built-in Integrations**: LangChain provides pre-built tools that reduce boilerplate and improve maintainability
-- **Structured Outputs**: Using Pydantic models with `response_format` ensures type-safe, predictable agent responses
-- **Agent Interface**: The `create_agent` function provides a simple, consistent interface for building agents with different capabilities
+3. Run ingestion to populate the vector store:
+```bash
+python ingestion.py
+```
+
+4. Run the RAG pipeline:
+```bash
+python main.py
+```
+
+## Why LCEL?
+
+The tutorial demonstrates two approaches to building RAG:
+
+| Feature | Naive Approach | LCEL Approach |
+|---------|----------------|---------------|
+| Code style | Imperative | Declarative |
+| Streaming | Manual implementation | Built-in `.stream()` |
+| Async | Manual implementation | Built-in `.ainvoke()` |
+| Composability | Limited | Pipe operator `\|` |
+| Batch processing | Manual loops | Built-in `.batch()` |
+
+## Technologies
+
+- **LangChain** - Framework for building LLM applications
+- **OpenAI** - Embeddings and chat completions
+- **Pinecone** - Vector database for similarity search
+- **Python** - 3.12+
